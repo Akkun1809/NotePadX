@@ -3,19 +3,27 @@ import customtkinter as cstk
 from tkinter.messagebox import *
 from tkinter import filedialog as fd
 from configparser import ConfigParser
-import os, sys
+import os, sys, getpass
 
 class App(cstk.CTk):
     def __init__(self):
         super().__init__()
         
-        if os.path.isfile("./note.ico"):
-            self.iconbitmap('./note.ico')
-        else:
+        self.usrnm = getpass.getuser()
+        self.pth_fldr = f"C:\\Users\\{self.usrnm}\\AppData\\Roaming\\NotePadX"
+        if os.path.isdir(f"{self.pth_fldr}"):
             pass
-
-        self.title("NotePad+")
-        self.geometry("500x300")
+        else:
+            os.makedirs(f"{self.pth_fldr}")
+            
+        self.wind_width = 600
+        self.wind_height = 400
+        self.screen_width = self.winfo_screenwidth()
+        self.screen_height = self.winfo_screenheight()
+        self.center_x = int(self.screen_width/2 - self.wind_width/2)
+        self.center_y = int(self.screen_height/2 - self.wind_height/2)
+        self.title("NotePadX")
+        self.geometry(f"{self.wind_width}x{self.wind_height}+{self.center_x}+{self.center_y}")
         cstk.set_appearance_mode("Dark")
         cstk.set_default_color_theme("blue")
 
@@ -36,8 +44,19 @@ class App(cstk.CTk):
         self.sttngs_win = cstk.CTkToplevel(self)
         self.sttngs_win.destroy()
         x = 0
+        self.config_name = "config.ini"
+        # determine if application is a script file or frozen exe
+        if getattr(sys, 'frozen', False):
+            self.application_path = os.path.dirname(sys.executable)
+        elif __file__:
+            self.application_path = os.path.dirname(__file__)
+        self.config_path = os.path.join(self.pth_fldr, self.config_name)
 
-        if os.path.isfile("./config.ini"):
+        if os.path.isfile(os.path.join(self.application_path, "note.ico")):
+            self.iconbitmap(os.path.join(self.application_path, "note.ico"))
+        else:
+            pass
+        if os.path.isfile(f"{self.config_path}"):
             pass
         else:
             self.crt_cnfgfl()
@@ -62,7 +81,7 @@ class App(cstk.CTk):
             print("El Archivo Existe!")
             self.file = self.fl_pssd
             self.base = os.path.basename(self.file)
-            self.title(f"{self.base} - NotePad")
+            self.title(f"{self.base} - NotePadX")
             self.txt_box.delete(1.0, tk.END)
             with open(self.fl_pssd, "r") as filehandle:
                 for linea in filehandle:
@@ -187,7 +206,7 @@ class App(cstk.CTk):
         f = fd.askopenfilename(filetypes=filetypes)
         self.file = f
         self.base = os.path.basename(f)
-        self.title(f"{self.base} - NotePad")
+        self.title(f"{self.base} - NotePadX")
         if f != "":
             self.txt_box.delete(1.0, tk.END)
             with open(f, "r") as filehandle:
@@ -207,7 +226,7 @@ class App(cstk.CTk):
             if f != "":
                 self.file = f
                 self.base = os.path.basename(f)
-                self.title(f"{self.base} - NotePad")
+                self.title(f"{self.base} - NotePadX")
                 txt = self.txt_box.get("0.0", "end")
                 arch1 = open(f, "w")
                 arch1.write(txt)
@@ -215,7 +234,7 @@ class App(cstk.CTk):
             else:
                 showerror(title="Error", message="Ha Ocurrido un Error al guardar")
         else:
-            self.title(f"{self.base} - NotePad")
+            self.title(f"{self.base} - NotePadX")
             txt = self.txt_box.get("0.0", "end")
             arch1 = open(self.file, "w")
             arch1.write(txt)
@@ -233,7 +252,7 @@ class App(cstk.CTk):
         if f != "":
             self.file = f
             self.base = os.path.basename(f)
-            self.title(f"{self.base} - NotePad")
+            self.title(f"{self.base} - NotePadX")
             txt = self.txt_box.get("0.0", "end")
             arch1 = open(f, "w")
             arch1.write(txt)
@@ -249,11 +268,11 @@ class App(cstk.CTk):
         if self.file != "":
             self.save()
             self.file = ""
-            self.title("Notepad")
+            self.title("NotepadX")
             self.txt_box.delete(1.0, tk.END)
         else:
             self.file = ""
-            self.title("Notepad")
+            self.title("NotepadX")
             self.txt_box.delete(1.0, tk.END)
 
     ##############################
@@ -306,6 +325,7 @@ class App(cstk.CTk):
                 self.sttngs_win.geometry("540x300")
                 self.sttngs_win.resizable(False,False)
                 self.sttngs_win.title("Settings")
+                self.sttngs_win.iconbitmap(os.path.join(self.application_path, "note.ico"))
 
                 # Creating the lists
                 self.font_list = []
@@ -507,7 +527,7 @@ class App(cstk.CTk):
         self.set_txtfnt(self.crrnt_fnt, self.crrnt_sze, self.crrnt_weight)
         self.update()
 
-        with open('config.ini', 'w') as conf:
+        with open(f"{self.config_path}", 'w') as conf:
             self.config_object.write(conf)
 
     def chng_font2(self):
@@ -529,7 +549,7 @@ class App(cstk.CTk):
         self.lbl_fontlst.cget("font").configure(family=self.crrnt_fnt, size=int(self.crrnt_sze), weight=self.crrnt_weight)
         self.lbl1.cget("font").configure(family=self.crrnt_fnt, size=int(self.crrnt_sze), weight=self.crrnt_weight)
 
-        with open('config.ini', 'w') as conf:
+        with open(f"{self.config_path}", 'w') as conf:
             self.config_object.write(conf)
         
         self.set_sysfnt(self.crrnt_fnt, self.crrnt_sze, self.crrnt_weight)
@@ -586,9 +606,10 @@ class App(cstk.CTk):
                 self.about_win.geometry("400x200")
                 self.about_win.resizable(False,False)
                 self.about_win.title("About")
+                self.about_win.iconbitmap(os.path.join(self.application_path, "note.ico"))
 
-                self.lbl = cstk.CTkLabel(self.about_win, text="lkjalskjdlaksd")
-                self.lbl.pack()
+                self.lbl = cstk.CTkLabel(self.about_win, text="Product: NotePadX\nVersion: 0.9.9\nAuthor: Akkun\nDate Release: 06/01/2023\n\nThanks for using this software <3")
+                self.lbl.pack(fill=tk.BOTH, expand=True)
                 self.about_win.grab_release()
         except:
             self.about_win = cstk.CTkToplevel(self)
@@ -596,8 +617,8 @@ class App(cstk.CTk):
             self.about_win.resizable(False,False)
             self.about_win.title("About")
 
-            self.lbl = cstk.CTkLabel(self.about_win, text="lkjalskjdlaksd")
-            self.lbl.pack()
+            self.lbl = cstk.CTkLabel(self.about_win, text="Product: NotePadX\nVersion: 0.9.9\nAuthor: Akkun\nDate Release: 06/01/2023\n\nThanks for using this software <3")
+            self.lbl.pack(fill=tk.BOTH, expand=True)
             self.about_win.grab_release()
 
     ###################################
@@ -616,12 +637,12 @@ class App(cstk.CTk):
             "weight": "normal"
         }
 
-        with open('config.ini', 'w') as conf:
+        with open(f"{self.config_path}", 'w') as conf:
             self.config_object.write(conf)
 
     def load_cnfgfl(self):
         self.config_object = ConfigParser()
-        self.config_object.read("config.ini")
+        self.config_object.read(f"{self.config_path}")
         self.txt_fnt = self.config_object["FONT_TXTEDITOR"]
         self.sys_fnt = self.config_object["FONT_SYS"]
 
